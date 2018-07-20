@@ -1,6 +1,7 @@
 package com.example.yukakosunabe.quizapp;
 
 import android.content.Intent;
+import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -8,11 +9,14 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.yukakosunabe.quizapp.QuizLibrary.JsQuizLibrary;
+
 public class JsQuizActivity extends AppCompatActivity {
 
     JsQuizLibrary jsQuizLibrary = new JsQuizLibrary();
 
     private TextView mQuestionNumber;
+    private TextView countDown;
     private TextView mScoreView;
     private TextView mQuestionView;
     private Button mBtnChoice1;
@@ -21,6 +25,7 @@ public class JsQuizActivity extends AppCompatActivity {
     private Button mBtnChoice4;
 
     private String mAnswer;
+    private int totalQuestionNum;
     private int mScore = 0;
     private int mQuestionNum = 0;
 
@@ -29,7 +34,10 @@ public class JsQuizActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz_screen);
 
+
+        totalQuestionNum = jsQuizLibrary.getmQuestion().length;
         mQuestionNumber = findViewById(R.id.questionNum_tv);
+        countDown = findViewById(R.id.countdown);
         mScoreView = findViewById(R.id.score);
         mQuestionView = findViewById(R.id.question_tv);
         mBtnChoice1 = findViewById(R.id.choice1);
@@ -37,7 +45,9 @@ public class JsQuizActivity extends AppCompatActivity {
         mBtnChoice3 = findViewById(R.id.choice3);
         mBtnChoice4 = findViewById(R.id.choice4);
 
+
         updateQuestion();
+        countdown();
 
 
         // Start Btn1'Listener
@@ -129,6 +139,20 @@ public class JsQuizActivity extends AppCompatActivity {
 
     }
 
+    private void countdown() {
+        new CountDownTimer(5000, 1000) {
+
+            public void onTick(long millisUntilFinished) {
+                countDown.setText("" + millisUntilFinished / 1000);
+            }
+
+            public void onFinish() {
+                intent();
+            }
+        }.start();
+    }
+
+
     private void toast(String message){
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
@@ -155,12 +179,20 @@ public class JsQuizActivity extends AppCompatActivity {
 
     }
 
+    private void intent() {
+        Intent intent = new Intent(this, ShowScore.class);
+        intent.putExtra("sendScore", mScoreView.getText().toString());
+        startActivity(intent);
+    }
+
     private void updateScore(int point){
-        mScoreView.setText("Your Score " + mScore);
+        mScoreView.setText("Score "  + 100 / totalQuestionNum * mScore);
     }
     private void updateQuestionNum(int num){
-        mQuestionNumber.setText("Question No." + mQuestionNum );
+        mQuestionNumber.setText("Q" + mQuestionNum );
     }
+
+
 
 
 }

@@ -1,6 +1,11 @@
 package com.example.yukakosunabe.quizapp;
 
+import android.annotation.TargetApi;
 import android.content.Intent;
+import android.icu.text.SimpleDateFormat;
+import android.os.Build;
+import android.os.CountDownTimer;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -8,11 +13,20 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.yukakosunabe.quizapp.QuizLibrary.HtmlCssQuizLiblary;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.Locale;
+
+@TargetApi(Build.VERSION_CODES.N)
+@RequiresApi(api = Build.VERSION_CODES.N)
 public class HtmlCssQuizActivity extends AppCompatActivity {
 
     private HtmlCssQuizLiblary mHtmlCssQuizLiblary = new HtmlCssQuizLiblary();
 
     private TextView mQuestionNumber;
+    private TextView countDown;
     private TextView mScoreView;
     private TextView mQuestionView;
     private Button mBtnChoice1;
@@ -20,17 +34,24 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
     private Button mBtnChoice3;
     private Button mBtnChoice4;
 
-
     private String mAnswer;
+    private int totalQuestionNum;
+    private int mQuestionNum = 1;
     private int mScore = 0;
-    private int mQuestionNum = 0;
+
+
+    private DatabaseReference high_score;
+    private DatabaseReference current_score;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz_screen);
 
+        totalQuestionNum = mHtmlCssQuizLiblary.getmQuestion().length;
         mQuestionNumber = findViewById(R.id.questionNum_tv);
+        countDown = findViewById(R.id.countdown);
         mScoreView = findViewById(R.id.score);
         mQuestionView = findViewById(R.id.question_tv);
         mBtnChoice1 = findViewById(R.id.choice1);
@@ -38,7 +59,13 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
         mBtnChoice3 = findViewById(R.id.choice3);
         mBtnChoice4 = findViewById(R.id.choice4);
 
+        countdown();
         updateQuestion();
+
+        // Write a message to http://www.freshaircinema.ca/summercinema/map.htmle database
+        FirebaseDatabase database = FirebaseDatabase.getInstance(); // Connect to database
+        high_score = database.getReference("high_score"); // inside the databse, find reference of "message"
+        current_score = database.getReference("current_score");
 
 
         // Start Btn1'Listener
@@ -130,6 +157,19 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
 
     }
 
+    private void countdown() {
+        new CountDownTimer(5000, 1000) {
+
+            public void onTick(long millisUntilFinished) {
+                countDown.setText("" + millisUntilFinished / 1000);
+            }
+
+            public void onFinish() {
+                intent();
+            }
+        }.start();
+    }
+
     private void toast(String message){
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
@@ -148,19 +188,24 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
             mAnswer = mHtmlCssQuizLiblary.getCorrectAnswer(mQuestionNum);
             mQuestionNum++;
         } else {
-            Intent intent = new Intent(this, ShowScore.class);
-            intent.putExtra("sendScore", mScoreView.getText().toString());
-            startActivity(intent);
+            intent();
 
         }
 
     }
 
+    private void intent() {
+        Intent intent = new Intent(this, ShowScore.class);
+        intent.putExtra("sendScore", mScoreView.getText().toString());
+        startActivity(intent);
+    }
+
     private void updateScore(int point){
-        mScoreView.setText("Your Score " + mScore);
+        point = 100 / totalQuestionNum * mScore;
+        mScoreView.setText("Score " + point);
     }
     private void updateQuestionNum(int num){
-        mQuestionNumber.setText("Question No." + mQuestionNum );
+        mQuestionNumber.setText("Q" + mQuestionNum );
     }
 
 }
