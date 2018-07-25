@@ -1,4 +1,4 @@
-package com.example.yukakosunabe.quizapp;
+package com.example.yukakosunabe.quizapp.QuizLibrary;
 
 public class HtmlCssQuizLiblary {
     private String mQuestion[] = {
