@@ -2,7 +2,6 @@ package com.example.yukakosunabe.quizapp;
 
 import android.annotation.TargetApi;
 import android.content.Intent;
-import android.icu.text.SimpleDateFormat;
 import android.os.Build;
 import android.os.CountDownTimer;
 import android.support.annotation.RequiresApi;
@@ -13,19 +12,23 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.yukakosunabe.quizapp.DataStoreModel.HtmlScore;
 import com.example.yukakosunabe.quizapp.QuizLibrary.HtmlCssQuizLiblary;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
-import java.util.Locale;
+import com.google.firebase.database.Query;
 
 @TargetApi(Build.VERSION_CODES.N)
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class HtmlCssQuizActivity extends AppCompatActivity {
 
     private HtmlCssQuizLiblary mHtmlCssQuizLiblary = new HtmlCssQuizLiblary();
+    private HtmlScore mHtmlScore;
 
-    private TextView mQuestionNumber;
+    private TextView questionNumTV;
     private TextView countDown;
     private TextView mScoreView;
     private TextView mQuestionView;
@@ -36,12 +39,12 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
 
     private String mAnswer;
     private int totalQuestionNum;
-    private int mQuestionNum = 1;
-    private int mScore = 0;
+    private int mQuestionNum;
+    private int mScore;
 
-
-    private DatabaseReference high_score;
-    private DatabaseReference current_score;
+    // [START declare_database_ref]
+    private DatabaseReference ref_html;
+    // [END declare_database_ref]
 
 
     @Override
@@ -50,7 +53,7 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
         setContentView(R.layout.activity_quiz_screen);
 
         totalQuestionNum = mHtmlCssQuizLiblary.getmQuestion().length;
-        mQuestionNumber = findViewById(R.id.questionNum_tv);
+        questionNumTV = findViewById(R.id.questionNum_tv);
         countDown = findViewById(R.id.countdown);
         mScoreView = findViewById(R.id.score);
         mQuestionView = findViewById(R.id.question_tv);
@@ -59,32 +62,25 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
         mBtnChoice3 = findViewById(R.id.choice3);
         mBtnChoice4 = findViewById(R.id.choice4);
 
+
         countdown();
         updateQuestion();
-
-        // Write a message to http://www.freshaircinema.ca/summercinema/map.htmle database
-        FirebaseDatabase database = FirebaseDatabase.getInstance(); // Connect to database
-        high_score = database.getReference("high_score"); // inside the databse, find reference of "message"
-        current_score = database.getReference("current_score");
-
 
         // Start Btn1'Listener
         mBtnChoice1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 if (mBtnChoice1.getText() == mAnswer){
-                    mScore = mScore + 1;
-                    updateScore(mScore);
-                    updateQuestion();
-                    updateQuestionNum(mQuestionNum);
+                    mScore++;
                     toast("Correct!");
                 } else {
-                    mScore = mScore - 1;
-                    updateScore(mScore);
+                    mScore--;
                     toast("Wrong!");
-                    updateQuestion();
-                    updateQuestionNum(mQuestionNum);
                 }
+                updateQuestion();
+                updateQuestionNum(mQuestionNum);
+                updateScore(mScore);
             }
         });
         // End Btn1's Listener
@@ -93,20 +89,18 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
         mBtnChoice2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mBtnChoice2.getText() == mAnswer){
-                    mScore = mScore + 1;
-                    updateScore(mScore);
-                    updateQuestion();
-                    updateQuestionNum(mQuestionNum);
 
+                if (mBtnChoice2.getText() == mAnswer){
+                    mScore++;
                     toast("Correct!");
                 } else {
-                    mScore = mScore - 1;
-                    updateScore(mScore);
-                    updateQuestionNum(mQuestionNum);
+                    mScore--;
                     toast("Wrong!");
-                    updateQuestion();
                 }
+                updateScore(mScore);
+                updateQuestion();
+                updateQuestionNum(mQuestionNum);
+
             }
         });
         // End Btn2's Listener
@@ -116,19 +110,16 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (mBtnChoice3.getText() == mAnswer){
-                    mScore = mScore + 1;
-                    updateScore(mScore);
-                    updateQuestion();
-                    updateQuestionNum(mQuestionNum);
-
+                    mScore++;
                     toast("Correct!");
                 } else {
-                    mScore = mScore - 1;
-                    updateScore(mScore);
-                    updateQuestionNum(mQuestionNum);
+                    mScore--;
                     toast("Wrong!");
-                    updateQuestion();
                 }
+                updateScore(mScore);
+                updateQuestion();
+                updateQuestionNum(mQuestionNum);
+
             }
         });
         // End Btn3's Listener
@@ -137,20 +128,17 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
         mBtnChoice4.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mBtnChoice4.getText() == mAnswer){
-                    mScore = mScore + 1;
-                    updateScore(mScore);
-                    updateQuestion();
-                    updateQuestionNum(mQuestionNum);
 
+                if (mBtnChoice4.getText() == mAnswer){
+                    mScore++;
                     toast("Correct!");
                 } else {
-                    mScore = mScore - 1;
-                    updateScore(mScore);
-                    updateQuestionNum(mQuestionNum);
+                    mScore--;
                     toast("Wrong!");
-                    updateQuestion();
                 }
+                updateScore(mScore);
+                updateQuestionNum(mQuestionNum);
+                updateQuestion();
             }
         });
         // End Btn4's Listener
@@ -158,14 +146,19 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
     }
 
     private void countdown() {
-        new CountDownTimer(5000, 1000) {
+        new CountDownTimer(10000, 1000) {
 
             public void onTick(long millisUntilFinished) {
                 countDown.setText("" + millisUntilFinished / 1000);
             }
 
             public void onFinish() {
-                intent();
+                if (mQuestionNum != totalQuestionNum){
+
+                    intent();
+                } else {
+
+                }
             }
         }.start();
     }
@@ -173,7 +166,6 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
     private void toast(String message){
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
-
 
 
     private void updateQuestion() {
@@ -189,23 +181,38 @@ public class HtmlCssQuizActivity extends AppCompatActivity {
             mQuestionNum++;
         } else {
             intent();
-
         }
 
     }
 
+    private void updateQuestionNum(int num){
+        questionNumTV.setText("Q" + num );
+    }
+
     private void intent() {
+        FirebaseDatabase database = FirebaseDatabase.getInstance(); // Connect to database
+        ref_html = database.getReference("HTML"); // inside the databse, find reference of "message"
+        String unique_id = ref_html.push().getKey();
+
+        mHtmlScore = new HtmlScore(unique_id, 100 / totalQuestionNum * mScore);
+
+        ref_html.child(unique_id).setValue(mHtmlScore);
+
         Intent intent = new Intent(this, ShowScore.class);
         intent.putExtra("sendScore", mScoreView.getText().toString());
+        intent.putExtra("user_id", mHtmlScore.getUser_id());
+        intent.putExtra("html_score", mHtmlScore.getScore());
+
         startActivity(intent);
     }
 
-    private void updateScore(int point){
+    public void updateScore(int point){
+        // TODO every point should storage in database whether it's best score or not.
         point = 100 / totalQuestionNum * mScore;
         mScoreView.setText("Score " + point);
-    }
-    private void updateQuestionNum(int num){
-        mQuestionNumber.setText("Q" + mQuestionNum );
+
+        // TODO compared to high score, if last score is higher than high score, last score gonna be high score.
+
     }
 
 }

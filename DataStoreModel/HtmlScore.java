@@ -1,14 +1,14 @@
-package com.example.yukakosunabe.quizapp.Database;
+package com.example.yukakosunabe.quizapp.DataStoreModel;
 
 public class HtmlScore {
 
     private String user_id;
-    private String score;
+    private int score;
 
     public HtmlScore() {
     }
 
-    public HtmlScore(String user_id, String score) {
+    public HtmlScore(String user_id, int score) {
         this.user_id = user_id;
         this.score = score;
     }
@@ -21,16 +21,16 @@ public class HtmlScore {
         this.user_id = user_id;
     }
 
-    public String getScore() {
+    public int getScore() {
         return score;
     }
 
-    public void setScore(String score) {
+    public void setScore(int score) {
         this.score = score;
     }
 
     @Override
     public String toString() {
-        return this.score ;
+        return String.valueOf(this.score);
     }
 }
